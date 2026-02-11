@@ -1,7 +1,9 @@
 import { KPICard } from '@/app/components/KPICard';
 import { StatusBadge } from '@/app/components/StatusBadge';
-import { TrendingUp, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import { DataTable, Column } from '@/app/components/DataTable';
+import { TrendingUp, CheckCircle, XCircle, Clock, Zap } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useState } from 'react';
 
 const hourlyData = [
   { time: '00:00', volume: 8000 },
@@ -40,11 +42,52 @@ const failureReasons = [
   { reason: 'Technical Error', percentage: 6 },
 ];
 
+interface Transaction {
+  id: string;
+  date: string;
+  txnId: string;
+  npciRef: string;
+  payerVPA: string;
+  payeeVPA: string;
+  amount: string;
+  status: 'success' | 'failed' | 'pending';
+  merchant: string;
+  mcc: string;
+  tat: string;
+}
+
+const recentTransactions: Transaction[] = [
+  { id: '1', date: '2026-02-02 14:35:22', txnId: 'TXN789456123', npciRef: 'NPCI202602021435001', payerVPA: 'john@paytm', payeeVPA: 'merchant@ybl', amount: '₹1,250', status: 'success', merchant: 'Amazon', mcc: '5411', tat: '267 ms' },
+  { id: '2', date: '2026-02-02 14:35:19', txnId: 'TXN789456124', npciRef: 'NPCI202602021435002', payerVPA: 'amit@okaxis', payeeVPA: 'shop@icici', amount: '₹3,890', status: 'success', merchant: 'Flipkart', mcc: '5311', tat: '215 ms' },
+  { id: '3', date: '2026-02-02 14:35:15', txnId: 'TXN789456125', npciRef: 'NPCI202602021435003', payerVPA: 'priya@ybl', payeeVPA: 'store@hdfcbank', amount: '₹560', status: 'pending', merchant: 'Swiggy', mcc: '5812', tat: '1,245 ms' },
+  { id: '4', date: '2026-02-02 14:35:12', txnId: 'TXN789456126', npciRef: 'NPCI202602021435004', payerVPA: 'raj@paytm', payeeVPA: 'pay@icici', amount: '₹15,000', status: 'failed', merchant: 'Zomato', mcc: '5814', tat: '3,124 ms' },
+  { id: '5', date: '2026-02-02 14:35:08', txnId: 'TXN789456127', npciRef: 'NPCI202602021435005', payerVPA: 'sneha@okaxis', payeeVPA: 'merchant@ybl', amount: '₹2,340', status: 'success', merchant: 'BigBasket', mcc: '5411', tat: '289 ms' },
+];
+
 export function OverviewPage() {
+  const [transactions] = useState(recentTransactions);
+
+  const txnColumns: Column<Transaction>[] = [
+    { key: 'date', label: 'Date', sortable: true, render: (row) => <span className="text-xs text-[#635c8a]">{row.date}</span> },
+    { key: 'txnId', label: 'Transaction ID', sortable: true, render: (row) => <span className="font-mono text-xs text-[#4b1b91] font-medium">{row.txnId}</span> },
+    { key: 'npciRef', label: 'NPCI Ref ID', sortable: true, render: (row) => <span className="font-mono text-xs text-[#635c8a]">{row.npciRef}</span> },
+    { key: 'payerVPA', label: 'Payer VPA', render: (row) => <span className="text-xs">{row.payerVPA}</span> },
+    { key: 'payeeVPA', label: 'Payee VPA', render: (row) => <span className="text-xs">{row.payeeVPA}</span> },
+    { key: 'amount', label: 'Amount', sortable: true, render: (row) => <span className="font-semibold text-xs">{row.amount}</span> },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => <StatusBadge status={row.status} label={row.status.toUpperCase()} />
+    },
+    { key: 'merchant', label: 'Merchant', render: (row) => <span className="text-xs">{row.merchant}</span> },
+    { key: 'mcc', label: 'MCC', render: (row) => <span className="text-xs text-[#635c8a]">{row.mcc}</span> },
+    { key: 'tat', label: 'TAT (MS)', sortable: true, render: (row) => <span className="text-xs font-mono">{row.tat}</span> },
+  ];
+
   return (
     <div className="p-6 space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <KPICard
           title="Total Transactions"
           value="2,45,678"
@@ -73,6 +116,13 @@ export function OverviewPage() {
           trend={{ value: '15%', direction: 'down', label: 'faster' }}
           icon={Clock}
         />
+        <KPICard
+          title="TPS"
+          value="2,845"
+          subtitle="Transactions per second"
+          trend={{ value: '9.2%', direction: 'up', label: 'vs yesterday' }}
+          icon={Zap}
+        />
       </div>
 
       {/* Charts Row */}
@@ -80,7 +130,7 @@ export function OverviewPage() {
         {/* Transaction Trend */}
         <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[#1a1339] text-lg font-semibold">Transaction Trend - Hourly</h3>
+            <h3 className="text-[#1a1339] text-lg font-semibold">Hourly Transaction Trend</h3>
             <span className="text-[#635c8a] text-sm">Volume</span>
           </div>
           <ResponsiveContainer width="100%" height={280}>
@@ -91,11 +141,11 @@ export function OverviewPage() {
               <Tooltip />
               <defs>
                 <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#4b1b91" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#4b1b91" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <Line type="monotone" dataKey="volume" stroke="#8b5cf6" strokeWidth={2} fill="url(#colorVolume)" />
+              <Line type="monotone" dataKey="volume" stroke="#4b1b91" strokeWidth={2} fill="url(#colorVolume)" />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -138,10 +188,10 @@ export function OverviewPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Merchants */}
         <div className="bg-white rounded-xl p-6 shadow-sm">
-          <h3 className="text-[#1a1339] text-lg font-semibold mb-4">Top Merchant Volume</h3>
+          <h3 className="text-[#1a1339] text-lg font-semibold mb-4">Top Merchant by Volume</h3>
           <div className="space-y-3">
             {merchantData.map((merchant) => (
-              <div key={merchant.name} className="flex items-center justify-between py-2 border-b border-[#e6e2e9] last:border-0">
+              <div key={merchant.name} className="flex items-center justify-between py-2 border-b border-[#e6e2e9] last:border-0 hover:bg-[#fafafa] px-2 rounded-lg transition-colors cursor-pointer">
                 <div>
                   <p className="text-[#1a1339] text-sm font-medium">{merchant.name}</p>
                   <StatusBadge 
@@ -179,12 +229,12 @@ export function OverviewPage() {
 
       {/* Current Transaction Stats */}
       <div className="bg-white rounded-xl p-6 shadow-sm">
-        <h3 className="text-[#1a1339] text-lg font-semibold mb-4">Current Transaction State</h3>
+        <h3 className="text-[#1a1339] text-lg font-semibold mb-4">Transaction State Cards</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {statusData.map((item) => (
             <div
               key={item.name}
-              className="border border-[#e6e2e9] rounded-lg p-4"
+              className="border border-[#e6e2e9] rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
               style={{ backgroundColor: `${item.color}05` }}
             >
               <div className="flex items-center gap-2 mb-2">
@@ -192,10 +242,31 @@ export function OverviewPage() {
                 <span className="text-sm font-medium text-[#1a1339]">{item.name}</span>
               </div>
               <div className="text-2xl font-bold" style={{ color: item.color }}>{item.value}%</div>
-              <div className="text-[#635c8a] text-sm mt-1">{item.count.toLocaleString()}</div>
+              <div className="text-[#635c8a] text-sm mt-1">{item.count.toLocaleString()} transactions</div>
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Real-Time Transaction Table */}
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-[#1a1339] text-lg font-semibold">Real-Time Transaction Feed</h3>
+            <p className="text-[#635c8a] text-sm mt-1">Live transaction monitoring</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-[#34b277] rounded-full animate-pulse"></div>
+            <span className="text-sm text-[#635c8a]">Live</span>
+          </div>
+        </div>
+        <DataTable 
+          columns={txnColumns} 
+          data={transactions} 
+          searchable 
+          searchPlaceholder="Search by TXN ID, VPA, Merchant..."
+          rowKey={(row) => row.id}
+        />
       </div>
     </div>
   );
